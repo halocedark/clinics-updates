@@ -1,0 +1,65 @@
+<div class="container-fluid" id="allPrescriptionsContainer">
+	<div class="wrapper ">
+		<h1 class="title-medium"><%= UI_DISPLAY_LANG.views.pages.all_prescriptions.sectionTitle %></h1>
+	</div>
+	<div class="mt-5">
+		<div class="alert alert-info my-2" style="display:none;" id="ERROR_BOX">
+			<img src="assets/img/utils/info.png" class="alert-icon" alt="">
+			<div class="alert-text" id="text"></div>
+		</div>
+		<div class="table-nav">
+			<div class="row gx-2 gy-2">
+				<div class="col-lg-12 col-md-12 col-sm-12">
+					<button class="btn btn-danger btn-sm" id="deleteSelectedBTN"><%= UI_DISPLAY_LANG.views.pages.all_prescriptions.btn01 %></button>
+				</div>
+				<div class="col-lg-12 col-md-12 col-sm-12">
+					<input type="text" class="input-text input-text-outline" id="searchInput" placeholder="<%= UI_DISPLAY_LANG.views.pages.all_prescriptions.ph01 %>">
+				</div>
+			</div>
+		</div>
+		<div id="pagination" class="my-3 flex flex-center"></div>
+		<div class="row gx-4 gy-3" id="tableElement">
+			<!--
+			<div class="col-lg-4 col-md-6 col-sm-12">
+				<div class="card-01">
+					<div class="card-header">
+						<div class="form-check border-bottom mb-1">
+							<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" data-role="CHECK" data-patientid="">
+							<label class="form-check-label" for="flexCheckDefault">
+								
+							</label>
+						</div>
+						<div class="row gx-2 gy-2">
+							<div class="col-md-6">
+								<div class="title-medium">عبد النور عدواني</div>
+								<div class="desc-medium">
+									0673479803
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="inline-flex flex-center w-100 h-100">
+									<img src="assets/img/utils/qr.png" class="img-02" alt="">	
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="card-body">
+						<ul class="card-list">
+							<li class="list-item">name</li>
+							<li class="list-item">age</li>
+							<li class="list-item">gender</li>
+							<li class="list-item">address</li>
+						</ul>
+					</div>
+					<div class="card-footer">
+						<button class="btn btn-primary btn-sm" data-role="UPDATE" data-patientid="">
+							
+						</button>
+					</div>
+				</div>
+			</div>
+			-->
+		</div>
+	</div>
+</div>
+

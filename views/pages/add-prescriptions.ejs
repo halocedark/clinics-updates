@@ -1,0 +1,50 @@
+<div class="container-fluid" id="addPrescriptionsContainer">
+	<div class="wrapper ">
+		<h1 class="title-medium"><%= UI_DISPLAY_LANG.views.pages.add_prescription.sectionTitle %></h1>
+	</div>
+	<div class="mt-5">
+		<div class="alert alert-info my-2" style="display:none;" id="ERROR_BOX">
+			<img src="assets/img/utils/info.png" class="alert-icon" alt="">
+			<div class="alert-text" id="text"></div>
+		</div>
+		<form action="#" id="addForm">
+			<div class="mb-2">
+				<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.label02 %></label>
+				<div>
+					<button id="addPresMedsBTN" class="btn btn-light btn-sm">
+						<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.btn01 %>
+					</button>
+				</div>
+				<div id="medicines">
+					<div class="row gx-2 gy-2 mt-3" data-role="MED">
+						<div class="col-lg col-md col-sm-12">
+							<input type="text" class="input-text input-text-outline" data-role="MED_NAME" placeholder="<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.ph01 %>">
+						</div>
+						<div class="col-lg col-md col-sm-12">
+							<input type="text" class="input-text input-text-outline" data-role="MED_DOSE" placeholder="<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.ph02 %>">
+						</div>
+						<div class="col-lg col-md col-sm-12">
+							<input type="text" class="input-text input-text-outline" data-role="MED_DURATION" placeholder="<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.ph03 %>">
+						</div>	
+					</div>
+				</div>
+			</div>
+			<div class="mb-2">
+				<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.label04 %></label>
+				<input type="text" class="input-text mb-2" placeholder="<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.ph04 %>" id="patientsSearchInput">
+				<select name="" id="patientSelect" class="input-text">
+					
+				</select>
+			</div>
+			<div class="mb-4">
+				<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.label03 %></label>
+				<div class="mt-2">
+					<img src="assets/img/utils/qr.png" alt="" class="img-01 rounded" id="presQRCodeIMG">
+				</div>
+			</div>
+			<div class="">
+				<input type="submit" class="btn btn-primary btn-sm shadow" value="<%= UI_DISPLAY_LANG.views.pages.add_prescription.form01.submitBTN01 %>">
+			</div>
+		</form>
+	</div>
+</div>
