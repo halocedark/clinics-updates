@@ -1297,8 +1297,8 @@ function setupAddAppointements(options = null)
 	var promise03 = null;
 	// set default date / time
 	var now = new Date();
-	aptDateInput.val( date.format(now, 'YYYY-MM-DD') );
-	aptTimeInput.val( date.format(now, 'HH:mm:ss') );
+	aptDateInput.val( date_time.format(now, 'YYYY-MM-DD') );
+	aptTimeInput.val( date_time.format(now, 'HH:mm:ss') );
 	var AppointementObject = {
 		aptId: (options) ? options.aptId : null,
 		clinicId: null,
@@ -1338,8 +1338,8 @@ function setupAddAppointements(options = null)
 				ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
 				// reset
 				target[0].reset();
-				aptDateInput.val( date.format(now, 'YYYY-MM-DD') );
-				aptTimeInput.val( date.format(now, 'HH:mm:ss') );
+				aptDateInput.val( date_time.format(now, 'YYYY-MM-DD') );
+				aptTimeInput.val( date_time.format(now, 'HH:mm:ss') );
 				//
 				AppointementObject.aptId = null;
 			});
@@ -1358,8 +1358,8 @@ function setupAddAppointements(options = null)
 			ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
 			// reset
 			target[0].reset();
-			aptDateInput.val( date.format(now, 'YYYY-MM-DD') );
-			aptTimeInput.val( date.format(now, 'HH:mm:ss') );
+			aptDateInput.val( date_time.format(now, 'YYYY-MM-DD') );
+			aptTimeInput.val( date_time.format(now, 'HH:mm:ss') );
 		});
 	});
 	// search clinics

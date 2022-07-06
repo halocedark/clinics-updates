@@ -95,6 +95,7 @@ let PageLoader;
 let updatePatient;
 let searchClinics;
 let listClinicTreatmentClasses;
+let searchPatientsLocal;
 let searchPatients;
 let sendMessage;
 let listMessagesInbox;
@@ -358,9 +359,19 @@ sendMessage = (MessageObject) =>
 	return sendAPIPostRequest(url, data);
 }
 // search Patients
-searchPatients = (SearchObject) =>
+searchPatients = (query) =>
 {
 	var url = API_END_POINT+'Patients/search';
+	var data = {
+		query:query
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Patients local
+searchPatientsLocal = (SearchObject) =>
+{
+	var url = API_END_POINT+'Patients/searchLocal';
 	var data = {
 		SearchObject:SearchObject
 	}

@@ -778,7 +778,7 @@ function setupAllPatients()
 			// display loader
 			TopLoader("En train de rechercher...");
 		}
-		searchPatients(SearchObject).then(response =>
+		searchPatientsLocal(SearchObject).then(response =>
 		{
 			// hide loader
 			TopLoader('', false);
@@ -1448,7 +1448,7 @@ function setupAddPrescriptions(options = null)
 			TopLoader("جاري البحث...");
 		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
 			TopLoader("En train de rechercher...");
-		searchPatients( SearchObject ).then(response =>
+		searchPatientsLocal( SearchObject ).then(response =>
 		{
 			// hide loader
 			TopLoader('', false);
@@ -1845,7 +1845,7 @@ function setupSendMessage()
 
 	var ERROR_BOX = sendMessageContainer.find('#ERROR_BOX');
 	var sendMSGForm = sendMessageContainer.find('#sendMSGForm');
-	var searchPatientsInput = sendMessageContainer.find('#searchPatientsInput');
+	var searchPatientsLocalInput = sendMessageContainer.find('#searchPatientsLocalInput');
 	var receiverSelect = sendMessageContainer.find('#receiverSelect');
 	var subjectInput = sendMessageContainer.find('#subjectInput');
 	var bodyInput = sendMessageContainer.find('#bodyInput');
@@ -1908,10 +1908,10 @@ function setupSendMessage()
 		});
 	});
 	// search patients
-	searchPatientsInput.off('keyup');
-	searchPatientsInput.on('keyup', e =>
+	searchPatientsLocalInput.off('keyup');
+	searchPatientsLocalInput.on('keyup', e =>
 	{
-		var target = searchPatientsInput;
+		var target = searchPatientsLocalInput;
 		var SearchObject = {
 			clinicId: USER_CONFIG.clinicId,
 			query: target.val()
@@ -1921,7 +1921,7 @@ function setupSendMessage()
 			TopLoader("جاري البحث...");
 		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
 			TopLoader("En train de rechercher...");
-		searchPatients(SearchObject).then(response =>
+		searchPatientsLocal(SearchObject).then(response =>
 		{
 			// hide loader
 			TopLoader('', false);
@@ -1938,7 +1938,7 @@ function setupSendMessage()
 			receiverSelect.html(html);
 		});
 	});
-	searchPatientsInput.trigger('keyup');
+	searchPatientsLocalInput.trigger('keyup');
 	// send to manager
 	sendMSGToManagerForm.off('submit');
 	sendMSGToManagerForm.on('submit', async e =>
@@ -2693,7 +2693,7 @@ function setupAddAppointements(options = null)
 		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
 			TopLoader("En train de rechercher...");
 
-		promise02 = searchPatients(SearchObject);
+		promise02 = searchPatientsLocal(SearchObject);
 		promise02.then(response =>
 		{
 			// hide loader
@@ -3387,7 +3387,7 @@ async function setupSellProducts(options = null)
 			clinicId: USER_CONFIG.clinicId,
 			query: val
 		};
-		promise01 = searchPatients(SearchObject);
+		promise01 = searchPatientsLocal(SearchObject);
 		// display loader
 		SectionLoader( patientSelect.closest('.section') );
 		promise01.then(response =>
