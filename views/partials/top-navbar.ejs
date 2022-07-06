@@ -1,10 +1,19 @@
 <div class="top-navbar-container" id="topNavbarContainer">
 	<div class="wrapper">
 		<button class="btn btn-primary btn-sm toggle-sidebar-btn" style="background: #221a46;border-color: #221a46;" id="toggleSideBarBTN">
-			<span><i class="fas fa-bars"></i></span>
-			<%= UI_DISPLAY_LANG.views.partials.topNavbar.btn01 %>
+			<span><i class="fas fa-arrows-alt-h"></i></span>
 		</button>
 		<ul class="tnb-navmenu" id="topbarNavMenu">
+			<li>
+				<a href="" data-role="LOGOUT_NAV_LINK">
+					<%= UI_DISPLAY_LANG.views.partials.sidebar.nav05 %>
+				</a>
+			</li>
+			<li>
+				<a href="" data-role="CHECK_FOR_UPDATES_NAV_LINK">
+					<%= UI_DISPLAY_LANG.views.partials.sidebar.nav04 %>
+				</a>
+			</li>
 			<li>
 				<a href="views/pages/settings.ejs" data-role="NAV_LINK">
 					<%= UI_DISPLAY_LANG.views.partials.sidebar.nav03 %>

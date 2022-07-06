@@ -1,5 +1,5 @@
 {
-  "name": "Clinics",
+  "name": "PromagClinic",
   "version": "0.1.0",
   "description": "",
   "main": "main.js",
@@ -17,7 +17,7 @@
         "repo": "clinics-updates"
       }
     ],
-    "appId": "com.holoolaz.clinics",
+    "appId": "com.holoolaz.promag_clinics",
     "win": {
       "target": [
         {
@@ -46,18 +46,14 @@
   "license": "MIT",
   "dependencies": {
     "asarmor": "^2.0.0",
+    "date-and-time": "^2.4.0",
     "ejs-electron": "^2.1.1",
     "electron-is-dev": "^2.0.0",
     "electron-root-path": "^1.0.16",
     "electron-updater": "^4.6.5",
-    "express": "^4.17.1",
     "ini": "^2.0.0",
     "jquery": "^3.6.0",
-    "papaparse": "^5.3.2",
     "qrcode": "^1.5.0",
-    "read-excel-file": "^5.2.28",
-    "sqlite": "^4.1.1",
-    "sqlite3": "^5.0.8",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

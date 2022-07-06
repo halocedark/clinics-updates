@@ -1,6 +1,7 @@
 $(function()
 {
 
+
 // Setup app updates
 function setupAppUpdates()
 {
@@ -283,9 +284,15 @@ function setupAllViewedPresc()
 			var id = target.data('id');
 			presc.info(id).then(async data =>
 			{
-				console.log(data);
-				
+				// display loader
+				if ( FUI_DISPLAY_LANG.lang == 'ar' )
+					TopLoader("أنشاء ملفات العرض...");
+				else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+					TopLoader("Créer des fichiers de présentation...");
+
 				await createPrescPreviewFiles(data.prescHTML);
+				// hide loader
+				TopLoader('', false);
 
 				var prescData = JSON.parse(data.prescData);
 				// add page data
@@ -409,6 +416,8 @@ function setupAllViewedPresc()
 			var response = await sqliteDeletePrescList( items );
 			// hide loader
 			TopLoader('', false);
+
+			console.log(response);
 			if ( response.code == 404 )
 			{
 				ERROR_BOX.show(0).delay(7*1000).hide(0)
@@ -489,6 +498,685 @@ function setupAllViewedPresc()
 			if ( check.is(':checked') )
 				list.push({id:check.data('id')});
 		}
+		return list;
+	}
+}
+// setup send message
+function setupSendMessage()
+{
+	var sendMessageContainer = $('#sendMessageContainer');
+	if ( sendMessageContainer[0] == undefined )
+		return;
+
+	var ERROR_BOX = sendMessageContainer.find('#ERROR_BOX');
+	var sendMSGForm = sendMessageContainer.find('#sendMSGForm');
+	var clinicsSearchInput = sendMessageContainer.find('#clinicsSearchInput');
+	var receiverSelect = sendMessageContainer.find('#receiverSelect');
+	var subjectInput = sendMessageContainer.find('#subjectInput');
+	var bodyInput = sendMessageContainer.find('#bodyInput');
+
+	// send
+	sendMSGForm.off('submit');
+	sendMSGForm.on('submit', e =>
+	{
+		e.preventDefault();
+		var target = sendMSGForm;
+		var MessageObject = {
+			sender: USER_CONFIG.patientHashId,
+			receiver: receiverSelect.find(':selected').val(),
+			subject: subjectInput.val(),
+			body: bodyInput.val()
+		};
+		// display loader
+		if ( FUI_DISPLAY_LANG.lang == 'ar' )
+			TopLoader("يتم ارسال الرسالة...");
+		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+			TopLoader("Le message est envoyé...");
+
+		sendMessage(MessageObject).then(response =>
+		{
+			// hide loader
+			TopLoader('', false);
+			if ( response.code == 404 )
+			{
+				ERROR_BOX.show(0).delay(7*1000).hide(0)
+				.find('#text').text(response.message);
+				return;
+			}
+			ERROR_BOX.show(0).delay(7*1000).hide(0)
+			.find('#text').text(response.message);
+			// reset
+			target[0].reset();
+		});
+	});
+	// search clinics
+	clinicsSearchInput.off('keyup');
+	clinicsSearchInput.on('keyup', e =>
+	{
+		var target = clinicsSearchInput;
+		// display loader
+		if ( FUI_DISPLAY_LANG.lang == 'ar' )
+			TopLoader("جاري البحث...");
+		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+			TopLoader("En train de rechercher...");
+		searchClinics(target.val()).then(response =>
+		{
+			// hide loader
+			TopLoader('', false);
+			if ( response.code == 404 )
+				return;
+
+			var data = response.data;
+			var html = '';
+			$.each(data, (k,v) =>
+			{
+				html += `<option value="${v.clinicHash}">${v.clinicName}</option>`;
+			});
+			// add html
+			receiverSelect.html(html);
+		});
+	});
+	clinicsSearchInput.trigger('keyup');
+}
+//setup sent messages
+function setupSentMessages()
+{
+	var sentMessagesContainer = $('#sentMessagesContainer');
+	if ( sentMessagesContainer[0] == undefined )
+		return;
+
+	var ERROR_BOX = sentMessagesContainer.find('#ERROR_BOX');
+	var msgOptionsList = sentMessagesContainer.find('#msgOptionsList');
+	var pagination = sentMessagesContainer.find('#pagination');
+	var tableElement = sentMessagesContainer.find('#tableElement');
+
+	var contentsWrapper = sentMessagesContainer.find('#contentsWrapper');
+	var msgContentsWrapper = sentMessagesContainer.find('#msgContentsWrapper');
+	var messageDiv = msgContentsWrapper.find('#messageDiv');
+	var backBTN = msgContentsWrapper.find('#backBTN');
+	var addReplyForm = msgContentsWrapper.find('#addReplyForm');
+	var replyTextInput = addReplyForm.find('#replyTextInput');
+	var repliesCount = addReplyForm.find('#repliesCount');
+	var pagination2 = msgContentsWrapper.find('#pagination2');
+	var repliesDiv = msgContentsWrapper.find('#repliesDiv');
+
+	// msgOptionsList click
+	msgOptionsList.off('click');
+	msgOptionsList.on('click', e =>
+	{
+		var target = $(e.target);
+		if ( target.data('role') == 'MARK_AS_READ' )
+		{
+			var data = {
+				list: getSelectedRows(),
+				read: true,
+				userHash: USER_CONFIG.patientHashId
+			};
+			setMessagesRead(data).then(response =>
+			{
+				if ( response.code == 404 )
+				{
+					ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+					return;
+				}
+				// display messages
+				displayMessages();
+			});
+		}
+		else if ( target.data('role') == 'DELETE' )
+		{
+			PromptConfirmDialog().then(c =>
+			{
+				// display loader
+				if ( FUI_DISPLAY_LANG.lang == 'ar' )
+					TopLoader("حذف الرسائل...");
+				else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+					TopLoader("supprimer les messages...");
+
+				removeMessages(getSelectedRows()).then(response =>
+				{
+					// hide loader
+					TopLoader('', false);
+					if ( response.code == 404 )
+					{
+						ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+						return;
+					}
+					// display messages
+					displayMessages();
+				});
+			});
+		}
+	});
+	// add reply
+	addReplyForm.off('submit');
+	addReplyForm.on('submit', e =>
+	{
+		e.preventDefault();
+		var target = addReplyForm;
+		var msgId = target.data('msgid');
+		var MessageObject = {
+			msgId: msgId,
+			userHash: USER_CONFIG.patientHashId,
+			replyText: replyTextInput.val()
+		};
+		// display loader
+		SectionLoader(addReplyForm);
+		addMessageReply(MessageObject).then(response =>
+		{
+			// hide loader
+			SectionLoader(addReplyForm, '');
+			if ( response.code == 404 )
+			{
+				ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+				return;
+			}
+
+			ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+			// reset
+			target[0].reset();
+			//
+			displayMsgReplies(msgId);
+		});
+	});
+	// back to messages
+	backBTN.off('click');
+	backBTN.on('click', e =>
+	{
+		contentsWrapper.slideDown(200).siblings('.WRAPPER').slideUp(200);
+	});
+	//tableElement click
+	tableElement.off('click');
+	tableElement.on('click', e =>
+	{
+		var target = $(e.target);
+		if ( target.data('role') == 'CHECK' )
+		{
+			var parent = target.closest('[data-role="ROW"]');
+			toggleCheck(target);
+			if ( target.is(':checked') )
+				parent.addClass('selected');
+			else
+				parent.removeClass('selected');
+		}
+		else if ( target.data('role') == 'ROW' )
+		{
+			var msgId = target.data('msgid');
+			addReplyForm.data('msgid', msgId).attr('data-msgid', msgId);
+			//
+			msgContentsWrapper.slideDown(200).siblings('.WRAPPER').slideUp(200);
+			displayMsgReplies(msgId);
+		}
+	});
+	// display messages
+	displayMessages();
+	function displayMessages()
+	{
+		var MessageObject = {
+			userHash: USER_CONFIG.patientHashId,
+			part: []
+		};
+		// display loader
+		if ( FUI_DISPLAY_LANG.lang == 'ar' )
+			TopLoader("جلب جميع الرسائل...");
+		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+			TopLoader("Recevez tous les messages...");
+
+		listMessagesSent(MessageObject).then(response =>
+		{
+			// hide loader
+			TopLoader('', false);
+			// clear html
+			tableElement.html('');
+			if ( response.code == 404 )
+			{
+				tableElement.html(`<div class="list-item text-03 mb-1">
+										<div style="width:4%;">
+											<input type="checkbox" class="form-check-input" data-role="CHECK" data-msgid="">
+										</div>
+										<div class="no-pointer" style="flex-grow:1;width:15%;">
+											<span class="">${response.message}</span>
+										</div>
+										<div class="no-pointer" style="flex-grow:2;">
+											<span class="d-inline-block">
+												
+											</span>
+											<span class="d-inline-block text-muted">
+												
+											</span>
+										</div>
+									</div>`);
+				return;
+			}
+
+			var data = response.data;
+			var html = '';
+			$.each(data, (k,v) =>
+			{
+				var isReadText = (v.isRead == 1) ? 'opacity-5' : '';
+				var bodySnippet = '';
+				if ( v.msgBody.length > 40 )
+					bodySnippet = v.msgBody.substr(10, 25)+'...';
+				html += `<div class="list-item text-03 mb-1 ${isReadText}" data-role="ROW" data-msgid="${v.msgId}">
+							<div style="width:4%;">
+								<input type="checkbox" class="form-check-input pointer" data-role="CHECK" data-msgid="${v.msgId}">
+							</div>
+							<div class="no-pointer" style="flex-grow:1;width:15%;">
+								<span class="">${v.msgSubject.substr(0,20)}...</span>
+							</div>
+							<div class="no-pointer" style="flex-grow:2;">
+								<span class="d-inline-block">
+									${v.msgBody.substr(0,50)} - 
+								</span>
+								<span class="d-inline-block text-muted">
+									${bodySnippet}
+								</span>
+							</div>
+						</div>PAG_SEP`;
+			});
+			// add html
+			var options = {
+				data: html.split('PAG_SEP')
+			};
+			new SmoothPagination(pagination, tableElement, options);
+		});
+	}
+	// display msg replies
+	function displayMsgReplies(msgId)
+	{
+		var MessageObject = {
+			msgId: msgId,
+			folder: 'sent',
+			part: ['replies'],
+			read: true,
+			userHash: USER_CONFIG.patientHashId
+		};
+		// display loader
+		SectionLoader(msgContentsWrapper);
+		openMessage(MessageObject).then(response =>
+		{
+			// hide loader
+			SectionLoader(msgContentsWrapper, '');
+			// clear html
+			repliesDiv.html('');
+			// add total replies
+			var repliesTotal = 0;
+			if ( response.data )
+			{
+				if ( response.data.replies )
+					repliesTotal = response.data.replies.length
+			}
+			repliesCount.text('('+repliesTotal+')');
+			if ( response.code == 404 )
+			{
+				ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+				return;
+			}
+
+			var data = response.data;
+			var html = '';
+			// display message
+			messageDiv.html(`<div class="row gx-2 gy-1 mb-2">
+								<div class="col-lg-12 col-md-12 col-sm-12">
+									<span class="text-01">${data.senderName}</span>
+								</div>
+								<div class="col-lg-12 col-md-12">
+									<div class="text-muted">${data.senderPhone}</div>
+								</div>
+								<div class="col-lg-12 col-md-12">
+									<div class="text-muted">${data.msgDate} | ${data.msgTime}</div>
+								</div>
+							</div>
+							<div class="title-medium">
+								${data.msgSubject}
+							</div>
+							<div class="text-02">
+								${data.msgBody}
+							</div>`);
+			// display replies
+			if ( data.replies )
+			{
+				$.each(data.replies, (k,v) =>
+				{
+					html += `<div class="col-lg-12 col-md-12 col-sm-12 p-2 border rounded">
+								<div class="row gx-2 gy-1 mb-2">
+									<div class="col-lg-12 col-md-12 col-sm-12">
+										<span class="text-01">${v.replier.replierName}</span>
+									</div>
+									<div class="col-lg-12 col-md-12">
+										<div class="text-muted">${v.replier.replierPhone}</div>
+									</div>
+									<div class="col-lg-12 col-md-12">
+										<div class="text-muted">${v.replyDate} | ${v.replyTime}</div>
+									</div>
+								</div>
+								<div class="text-02">
+									${v.replyText}
+								</div>
+							</div>PAG_SEP`;
+				});	
+			}
+			// add html
+			var options = {
+				data: html.split('PAG_SEP'),
+				resultsPerPage: 6
+			};
+			new SmoothPagination(pagination2, repliesDiv, options);
+		});
+	}
+	// get select rows
+	function getSelectedRows()
+	{
+		var list = [];
+		var items = tableElement.find('[data-role="CHECK"]');
+		for (var i = 0; i < items.length; i++) 
+		{
+			var check = $(items[i]);
+			if ( check.is(':checked') )
+				list.push({msgId: check.data('msgid')});
+		}
+
+		return list;
+	}
+}
+//setup inbox messages
+function setupInboxMessages()
+{
+	var inboxMessagesContainer = $('#inboxMessagesContainer');
+	if ( inboxMessagesContainer[0] == undefined )
+		return;
+
+	var ERROR_BOX = inboxMessagesContainer.find('#ERROR_BOX');
+	var msgOptionsList = inboxMessagesContainer.find('#msgOptionsList');
+	var pagination = inboxMessagesContainer.find('#pagination');
+	var tableElement = inboxMessagesContainer.find('#tableElement');
+
+	var contentsWrapper = inboxMessagesContainer.find('#contentsWrapper');
+	var msgContentsWrapper = inboxMessagesContainer.find('#msgContentsWrapper');
+	var messageDiv = msgContentsWrapper.find('#messageDiv');
+	var backBTN = msgContentsWrapper.find('#backBTN');
+	var addReplyForm = msgContentsWrapper.find('#addReplyForm');
+	var replyTextInput = addReplyForm.find('#replyTextInput');
+	var repliesCount = addReplyForm.find('#repliesCount');
+	var pagination2 = msgContentsWrapper.find('#pagination2');
+	var repliesDiv = msgContentsWrapper.find('#repliesDiv');
+
+	// msgOptionsList click
+	msgOptionsList.off('click');
+	msgOptionsList.on('click', e =>
+	{
+		var target = $(e.target);
+		if ( target.data('role') == 'MARK_AS_READ' )
+		{
+			var data = {
+				list: getSelectedRows(),
+				read: true,
+				userHash: USER_CONFIG.patientHashId
+			};
+			setMessagesRead(data).then(response =>
+			{
+				if ( response.code == 404 )
+				{
+					ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+					return;
+				}
+				// display messages
+				displayMessages();
+			});
+		}
+		else if ( target.data('role') == 'DELETE' )
+		{
+			PromptConfirmDialog().then(c =>
+			{
+				// display loader
+				if ( FUI_DISPLAY_LANG.lang == 'ar' )
+					TopLoader("حذف الرسائل...");
+				else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+					TopLoader("supprimer les messages...");
+
+				removeMessages(getSelectedRows()).then(response =>
+				{
+					// hide loader
+					TopLoader('', false);
+					if ( response.code == 404 )
+					{
+						ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+						return;
+					}
+					// display messages
+					displayMessages();
+				});
+			});
+		}
+	});
+	// add reply
+	addReplyForm.off('submit');
+	addReplyForm.on('submit', e =>
+	{
+		e.preventDefault();
+		var target = addReplyForm;
+		var msgId = target.data('msgid');
+		var MessageObject = {
+			msgId: msgId,
+			userHash: USER_CONFIG.patientHashId,
+			replyText: replyTextInput.val()
+		};
+		// display loader
+		SectionLoader(addReplyForm);
+		addMessageReply(MessageObject).then(response =>
+		{
+			// hide loader
+			SectionLoader(addReplyForm, '');
+			if ( response.code == 404 )
+			{
+				ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+				return;
+			}
+
+			ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+			// reset
+			target[0].reset();
+			//
+			displayMsgReplies(msgId);
+		});
+	});
+	// back to messages
+	backBTN.off('click');
+	backBTN.on('click', e =>
+	{
+		contentsWrapper.slideDown(200).siblings('.WRAPPER').slideUp(200);
+	});
+	//tableElement click
+	tableElement.off('click');
+	tableElement.on('click', e =>
+	{
+		var target = $(e.target);
+		if ( target.data('role') == 'CHECK' )
+		{
+			var parent = target.closest('[data-role="ROW"]');
+			toggleCheck(target);
+			if ( target.is(':checked') )
+				parent.addClass('selected');
+			else
+				parent.removeClass('selected');
+		}
+		else if ( target.data('role') == 'ROW' )
+		{
+			var msgId = target.data('msgid');
+			addReplyForm.data('msgid', msgId).attr('data-msgid', msgId);
+			//
+			msgContentsWrapper.slideDown(200).siblings('.WRAPPER').slideUp(200);
+			displayMsgReplies(msgId);
+		}
+	});
+	// display messages
+	displayMessages();
+	function displayMessages()
+	{
+		var MessageObject = {
+			userHash: USER_CONFIG.patientHashId,
+			part: []
+		};
+		// display loader
+		if ( FUI_DISPLAY_LANG.lang == 'ar' )
+			TopLoader("جلب جميع الرسائل...");
+		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+			TopLoader("Recevez tous les messages...");
+
+		listMessagesInbox(MessageObject).then(response =>
+		{
+			// hide loader
+			TopLoader('', false);
+			// clear html
+			tableElement.html('');
+			if ( response.code == 404 )
+			{
+				tableElement.html(`<div class="list-item text-03 mb-1">
+										<div style="width:4%;">
+											<input type="checkbox" class="form-check-input" data-role="CHECK" data-msgid="">
+										</div>
+										<div class="no-pointer" style="flex-grow:1;width:15%;">
+											<span class="">${response.message}</span>
+										</div>
+										<div class="no-pointer" style="flex-grow:2;">
+											<span class="d-inline-block">
+												
+											</span>
+											<span class="d-inline-block text-muted">
+												
+											</span>
+										</div>
+									</div>`);
+				return;
+			}
+
+			var data = response.data;
+			var html = '';
+			$.each(data, (k,v) =>
+			{
+				var isReadText = (v.isRead == 1) ? 'opacity-5' : '';
+				var bodySnippet = '';
+				if ( v.msgBody.length > 40 )
+					bodySnippet = v.msgBody.substr(10, 25)+'...';
+				html += `<div class="list-item text-03 mb-1 ${isReadText}" data-role="ROW" data-msgid="${v.msgId}">
+							<div style="width:4%;">
+								<input type="checkbox" class="form-check-input pointer" data-role="CHECK" data-msgid="${v.msgId}">
+							</div>
+							<div class="no-pointer" style="flex-grow:1;width:15%;">
+								<span class="">${v.msgSubject.substr(0,20)}...</span>
+							</div>
+							<div class="no-pointer" style="flex-grow:2;">
+								<span class="d-inline-block">
+									${v.msgBody.substr(0,50)} - 
+								</span>
+								<span class="d-inline-block text-muted">
+									${bodySnippet}
+								</span>
+							</div>
+						</div>PAG_SEP`;
+			});
+			// add html
+			var options = {
+				data: html.split('PAG_SEP')
+			};
+			new SmoothPagination(pagination, tableElement, options);
+		});
+	}
+	// display msg replies
+	function displayMsgReplies(msgId)
+	{
+		var MessageObject = {
+			msgId: msgId,
+			folder: 'inbox',
+			part: ['replies'],
+			read: true,
+			userHash: USER_CONFIG.patientHashId
+		};
+		// display loader
+		SectionLoader(msgContentsWrapper);
+		openMessage(MessageObject).then(response =>
+		{
+			// hide loader
+			SectionLoader(msgContentsWrapper, '');
+			// clear html
+			repliesDiv.html('');
+			// add total replies
+			var repliesTotal = 0;
+			if ( response.data )
+			{
+				if ( response.data.replies )
+					repliesTotal = response.data.replies.length
+			}
+			repliesCount.text('('+repliesTotal+')');
+			if ( response.code == 404 )
+			{
+				ERROR_BOX.show(0).delay(7*1000).hide(0).find('#text').text(response.message);
+				return;
+			}
+
+			var data = response.data;
+			var html = '';
+			// display message
+			messageDiv.html(`<div class="row gx-2 gy-1 mb-2">
+								<div class="col-lg-12 col-md-12 col-sm-12">
+									<span class="text-01">${data.senderName}</span>
+								</div>
+								<div class="col-lg-12 col-md-12">
+									<div class="text-muted">${data.senderPhone}</div>
+								</div>
+								<div class="col-lg-12 col-md-12">
+									<div class="text-muted">${data.msgDate} | ${data.msgTime}</div>
+								</div>
+							</div>
+							<div class="title-medium">
+								${data.msgSubject}
+							</div>
+							<div class="text-02">
+								${data.msgBody}
+							</div>`);
+			// display replies
+			if ( data.replies )
+			{
+				$.each(data.replies, (k,v) =>
+				{
+					html += `<div class="col-lg-12 col-md-12 col-sm-12 p-2 border rounded">
+								<div class="row gx-2 gy-1 mb-2">
+									<div class="col-lg-12 col-md-12 col-sm-12">
+										<span class="text-01">${v.replier.replierName}</span>
+									</div>
+									<div class="col-lg-12 col-md-12">
+										<div class="text-muted">${v.replier.replierPhone}</div>
+									</div>
+									<div class="col-lg-12 col-md-12">
+										<div class="text-muted">${v.replyDate} | ${v.replyTime}</div>
+									</div>
+								</div>
+								<div class="text-02">
+									${v.replyText}
+								</div>
+							</div>PAG_SEP`;
+				});	
+			}
+			// add html
+			var options = {
+				data: html.split('PAG_SEP'),
+				resultsPerPage: 6
+			};
+			new SmoothPagination(pagination2, repliesDiv, options);
+		});
+	}
+	// get select rows
+	function getSelectedRows()
+	{
+		var list = [];
+		var items = tableElement.find('[data-role="CHECK"]');
+		for (var i = 0; i < items.length; i++) 
+		{
+			var check = $(items[i]);
+			if ( check.is(':checked') )
+				list.push({msgId: check.data('msgid')});
+		}
+
 		return list;
 	}
 }
@@ -630,6 +1318,9 @@ rebindEvents = () =>
 	setupTopNavbar();
 	setupNavbar();
 	setupAllViewedPresc();
+	setupSendMessage();
+	setupSentMessages();
+	setupInboxMessages();
 	setupSettings();
 }
 // replace with files that has proper interface
@@ -639,7 +1330,7 @@ if ( FUI_DISPLAY_LANG.lang == 'ar' )
 	$('head').append('<link rel="stylesheet" type="text/css" class="MAIN_STYLESHEET" href="assets/css/main_ar.css">');
 	setTimeout(() => {
 		$($('.MAIN_STYLESHEET')[0]).remove();
-	}, 2000);
+	}, 0);
 	// change pagination scripts
 	$('#PAGINATION').remove();
 	$('body').append('<script type="text/javascript" id="PAGINATION" src="assets/js/pagination_ar.js"></script>');
@@ -650,7 +1341,7 @@ else if ( FUI_DISPLAY_LANG.lang == 'fr' )
 	$('head').append('<link rel="stylesheet" type="text/css" class="MAIN_STYLESHEET" href="assets/css/main_fr.css">');
 	setTimeout(() => {
 		$($('.MAIN_STYLESHEET')[0]).remove();
-	}, 2000);
+	}, 0);
 	// change pagination scripts
 	$('#PAGINATION').remove();
 	$('body').append('<script type="text/javascript" id="PAGINATION" src="assets/js/pagination_fr.js"></script>');
@@ -659,13 +1350,15 @@ rebindEvents();
 // setup auto updates
 setupAppUpdates();
 // First UI user will see
-var href = 'views/pages/all-viewed-prescriptions.ejs';
+var href = 'views/pages/settings.ejs';
 getPage(href).then(response =>
 {
 	MAIN_CONTENT_CONTAINER.html(response);
 	// Re assign events
 	rebindEvents();
 	toggleSimilarNavbarsLinks(href);
+	// hide loader
+	PageLoader(false);
 	// download sqlite db
 	var url = PROJECT_URL+'uploads/patients/'+USER_CONFIG.patientId+'/db/clinics_db.sqlite3';
 	var dir = APP_ROOT_PATH+'data/';
@@ -673,6 +1366,7 @@ getPage(href).then(response =>
 		fs.mkdirSync(dir);
 
 	var filename = dir+'clinics_db.db';
+
 	downloadFile(url, filename, progress =>
 	{
 		var title = '';

@@ -19,7 +19,7 @@
 .sp-navmenu
 {
 	list-style: none;
-    background: #75acfd;
+    background: #f9f9f9;
     width: 100%;
     border-radius: 4px;
     display: block;
@@ -46,7 +46,7 @@
 	display: block;
 	padding: .5em;
 	margin-right: 1px;
-	color: #ffffff;
+	color: #090131;
 	font-size: 15px;
 	font-weight: 200;
 	text-decoration: none;

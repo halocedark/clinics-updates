@@ -57,7 +57,6 @@
 				<select class="input-text" id="loginFormTypeSelect">
 					<option value="CLINIC" data-form="#CLINIC_LOGIN_FORM"><%= UI_DISPLAY_LANG.views.addons.userAuth.select01.option01 %></option>
 					<option value="FOUNDATION_MANAGER" data-form="#FOUNDATION_MANAGER_LOGIN_FORM"><%= UI_DISPLAY_LANG.views.addons.userAuth.select01.option02 %></option>
-					<option value="PATIENT" data-form="#PATIENT_LOGIN_FORM"><%= UI_DISPLAY_LANG.views.addons.userAuth.select01.option03 %></option>
 				</select>
 			</div>
 			<div class="row gx-4 gy-3">
@@ -104,6 +103,20 @@
 						<div class="form-group mb-2">
 							<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.addons.userAuth.form02.label03 %></label>
 							<input type="text" class="input-text input-text-outline" id="sfPhone">
+						</div>
+						<div class="form-group mb-2">
+							<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.addons.userAuth.form02.label02 %></label>
+							<input type="password" class="input-text input-text-outline" id="sfPassword">
+						</div>
+						<div class="form-group">
+							<input type="submit" class="btn btn-primary btn-sm" value="<%= UI_DISPLAY_LANG.views.addons.userAuth.form02.submitBTN01 %>">
+							<a href="#" class="form-link" id="switchToSignupForm"><%= UI_DISPLAY_LANG.views.addons.userAuth.form02.formText01 %></a>
+						</div>
+					</form>
+					<form action="#" id="FOUNDATION_MANAGER_LOGIN_FORM" style="display:none;">
+						<div class="form-group mb-2">
+							<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.addons.userAuth.form02.label01 %></label>
+							<input type="text" class="input-text input-text-outline" id="sfUsername">
 						</div>
 						<div class="form-group mb-2">
 							<label for="" class="form-label"><%= UI_DISPLAY_LANG.views.addons.userAuth.form02.label02 %></label>

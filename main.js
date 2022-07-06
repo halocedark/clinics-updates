@@ -9,9 +9,12 @@ const {autoUpdater} = require('electron-updater');
 const OS = require('os');
 const uuid = require('uuid');
 
+//let windows = [];
 let win;
 let loadingScreen;
 let devtools;
+
+var UI_DISPLAY_LANG = {};
 
 // Main Window
 function CreateWindow()
@@ -33,9 +36,9 @@ function CreateWindow()
 	// Load index.html
 	win.loadFile('index.ejs');
 	// Open dev tools
-	devtools = new BrowserWindow();
-	win.webContents.setDevToolsWebContents(devtools.webContents);
-    win.webContents.openDevTools({ mode: 'detach' });
+	//devtools = new BrowserWindow();
+	//win.webContents.setDevToolsWebContents(devtools.webContents);
+    //win.webContents.openDevTools({ mode: 'detach' });
 	// Set Win to null
 	win.on('closed', () =>
 	{
@@ -43,6 +46,8 @@ function CreateWindow()
 	});
 	// Delete Default Context menu
 	win.setMenu(null);
+	// push to windows array
+	//windows.push(win);
 	return win;
 }
 // Loading Screen
@@ -151,56 +156,71 @@ function setupDefaultIniSettings()
 function loadIniSettings()
 {
 	var ini = new IniFile(ROOTPATH.rootPath+'/');
-	return ini.readSync('settings');
+	return ini.read('settings');
 }
 // Load language
 function loadLang()
 {
-	// Create default values in settings.ini
-	setupDefaultIniSettings();
-	//
-	var settings = loadIniSettings();
-	if ( settings )
+	return new Promise(async (resolve, reject) =>
 	{
-		if ( settings.UI_Settings == null )
-			return;
+		// Create default values in settings.ini
+		setupDefaultIniSettings();
+		//
+		var settings = await loadIniSettings();
+		if ( settings )
+		{
+			if ( settings.UI_Settings == null )
+				return;
 
-		var lang = settings.UI_Settings.DISPLAY_LANG;
-		var Translation = require(__dirname+'/assets/js/langs/'+lang);
+			var lang = settings.UI_Settings.DISPLAY_LANG;
+			var Translation = require(__dirname+'/assets/js/langs/'+lang);
 
-		var trans = new Translation();
-		var UI_DISPLAY_LANG = trans.get();
-		//UI_DISPLAY_LANG['lang'] = lang;
-		// Set Lang variable object
-		ejse.data('UI_DISPLAY_LANG', trans.get());
-		// Save lang data in external file
-		// Create dir if not exists
-		var langDir = ROOTPATH.rootPath+'/langs/';
-		if ( !fs.existsSync(langDir) )
-			fs.mkdirSync(langDir, { recursive: true });
+			var trans = new Translation();
+			UI_DISPLAY_LANG = trans.get();
+			//UI_DISPLAY_LANG['lang'] = lang;
+			// Set Lang variable object
+			ejse.data('UI_DISPLAY_LANG', trans.get());
+			// Save lang data in external file
+			// Create dir if not exists
+			var langDir = ROOTPATH.rootPath+'/langs/';
+			if ( !fs.existsSync(langDir) )
+				fs.mkdirSync(langDir, { recursive: true });
 
-		// Create file
-		fs.writeFileSync(langDir+'display-lang.json', JSON.stringify(UI_DISPLAY_LANG));
-	}
+			// Create file
+			fs.writeFile(langDir+'display-lang.json', JSON.stringify(UI_DISPLAY_LANG), err =>
+			{
+				if ( err )
+				{
+					reject(err);
+					return;
+				}
+				resolve(UI_DISPLAY_LANG);
+			});
+		}	
+	});
 }
 // Run CreateWindow func
 app.whenReady().then(() =>
 {
 	//CreateLoadingScreen().show();
 	// Create ini file
-	loadLang();
 	// save Login Session
 	//saveLoginSession();
 	//
-	CreateWindow().webContents.on('did-finish-load', () => // Also 'ready-to-show'
+	loadLang().then(UI_DISPLAY_LANG =>
 	{
-		setTimeout( () => 
+		CreateWindow().webContents.on('did-finish-load', () => // Also 'ready-to-show'
 		{
-			if ( win )
-				win.show();
-			// auto updates
-			setupAutoUpdater();
-		}, 0 );
+			setTimeout( () => 
+			{
+				if ( win )
+					win.show();
+				// send translation object
+				win.webContents.send('translation-file-created', UI_DISPLAY_LANG);
+				// auto updates
+				setupAutoUpdater();
+			}, 0 );
+		});	
 	});
 });
 // Quit when all windows closed

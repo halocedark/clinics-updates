@@ -3,20 +3,21 @@ const fs = require('fs');
 const ROOTPATH = require('electron-root-path');
 const path = require('path');
 const uuid = require('uuid');
-const Papa = require('papaparse');
-const readXlsxFile = require('read-excel-file');
 const ipcIndexRenderer = require('electron').ipcRenderer;
 const OS = require('os');
 var QRCode = require('qrcode');
+const date_time = require('date-and-time');
+const Calendar = require(__dirname+'/assets/js/calendar');
 
 var MAIN_CONTENT_CONTAINER =  $('#MainContentContainer');
 var SIDE_NAV_CONTAINER = $('#sideNavbarContainer');
 var TOP_NAV_BAR = $('#topNavbarContainer');
 
 var APP_NAME = 'Clinics';
+var API_END_POINT = 'http://promagdz.com/projects/ClinicsAPI/api/';
+var PROJECT_URL = 'http://promagdz.com/projects/ClinicsAPI/';
 //var API_END_POINT = 'http://localhost/holoolaz.com/projects/ClinicsAPI/api/';
-var API_END_POINT = 'http://holoola-z.com/projects/ClinicsAPI/api/';
-var PROJECT_URL = 'http://holoola-z.com/projects/ClinicsAPI/';
+//var PROJECT_URL = 'http://localhost/holoolaz.com/projects/ClinicsAPI/';
 var APP_ICON = 'assets/img/logo/logo.png';
 var APP_ROOT_PATH = ROOTPATH.rootPath+'/';
 var APP_DIR_NAME = __dirname+'/';
@@ -32,6 +33,13 @@ var LOGIN_SESSION = undefined;
 var LOGIN_SESSION_FILE = OS.tmpdir()+'/CustomerProvider/login/session.json';
 
 var USER_CONFIG = {};
+
+var GLOBALS_SCRIPT = null;
+
+// Attendance
+const ATT_ABSENT = 1;
+const ATT_PRESENT = 2;
+const ATT_LATE = 3;
 
 let getAllStates;
 let setupUserAuth;
@@ -73,17 +81,312 @@ let clinicLogin;
 let patientLogin;
 let registerClinic;
 let updateClinic;
+let managerLogin;
+let getManager;
 let generateQRCode;
 let getPatient;
+let listPatients;
 let listenForBarcodeScanner;
 let downloadFile;
 let copyLinkToClipboard;
 let recursiveCopyDirFilesSync;
+let SectionLoader;
+let PageLoader;
 let updatePatient;
+let searchClinics;
+let listClinicTreatmentClasses;
+let searchPatients;
+let sendMessage;
+let listMessagesInbox;
+let listMessagesSent;
+let listMessageReplies;
+let addMessageReply;
+let removeMessages;
+let setMessagesRead;
+let setMessageRead;
+let openMessage;
+let searchTreatmentClasses;
+let searchTreatmentClassesLocal;
+let addAppointement;
+let updateAppointement;
+let getAppointement;
+let searchAppointements;
+let searchAppointementsLocal;
+let deleteAppointements;
+let trimNumber;
+let addToTreasury;
+let takeFromTreasury;
+let addEmployee;
+let updateEmployee;
+let listEmployeesTypes;
 
-$(function()
+$(async function()
 {
 
+GLOBALS_SCRIPT = $('#GLOBALS_SCRIPT');
+
+// list Employees Types
+listEmployeesTypes = () =>
+{
+	var url = API_END_POINT+'Employees/listTypes';
+	var data = {
+
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// update Employee
+updateEmployee = (EmployeeObject) =>
+{
+	var url = API_END_POINT+'Employees/update';
+	var data = {
+		EmployeeObject: EmployeeObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// add Employee
+addEmployee = (EmployeeObject) =>
+{
+	var url = API_END_POINT+'Employees/add';
+	var data = {
+		EmployeeObject: EmployeeObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// take From Treasury
+takeFromTreasury = (TreasuryObject) =>
+{
+	var url = API_END_POINT+'Treasury/take';
+	var data = {
+		TreasuryObject: TreasuryObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// add To Treasury
+addToTreasury = (TreasuryObject) =>
+{
+	var url = API_END_POINT+'Treasury/add';
+	var data = {
+		TreasuryObject: TreasuryObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+//trim Number
+trimNumber = (num, prefix = '+') =>
+{
+	if ( num >= 10000 )
+		num = (num / 10000).toFixed(2) + prefix;
+
+	return num;
+}
+// delete Appointements
+deleteAppointements = (list) =>
+{
+	var url = API_END_POINT+'Appointements/deleteList';
+	var data = {
+		list: list
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Appointements Local
+searchAppointementsLocal = (SearchObject) =>
+{
+	var url = API_END_POINT+'Appointements/searchLocal';
+	var data = {
+		SearchObject: SearchObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Appointements
+searchAppointements = (query) =>
+{
+	var url = API_END_POINT+'Appointements/search';
+	var data = {
+		query: query
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// get Appointement
+getAppointement = (aptId) =>
+{
+	var url = API_END_POINT+'Appointements/info';
+	var data = {
+		aptId: aptId
+	}
+
+	return sendAPIPostRequest(url, data);
+} 
+// update Appointement
+updateAppointement = (AppointementObject) =>
+{
+	var url = API_END_POINT+'Appointements/update';
+	var data = {
+		AppointementObject: AppointementObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// add Appointement
+addAppointement = (AppointementObject) =>
+{
+	var url = API_END_POINT+'Appointements/add';
+	var data = {
+		AppointementObject: AppointementObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Treatment Classes local
+searchTreatmentClassesLocal = (SearchObject) =>
+{
+	var url = API_END_POINT+'TreatmentClasses/searchLocal';
+	var data = {
+		SearchObject: SearchObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Treatment Classes
+searchTreatmentClasses = (query) =>
+{
+	var url = API_END_POINT+'TreatmentClasses/search';
+	var data = {
+		query: query
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// open Message
+openMessage = (MessageObject) =>
+{
+	var url = API_END_POINT+'Messages/open';
+	var data = {
+		MessageObject: MessageObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// set Message Read
+setMessageRead = (data) =>
+{
+	var url = API_END_POINT+'Messages/setRead';
+	var data = {
+		msgId: data.msgId,
+		read: data.read,
+		userHash: data.userHash
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// set Messages Read
+setMessagesRead = (data) =>
+{
+	var url = API_END_POINT+'Messages/setReadList';
+	var data = {
+		list: data.list,
+		read: data.read,
+		userHash: data.userHash
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// remove Messages
+removeMessages = (list) =>
+{
+	var url = API_END_POINT+'Messages/removeList';
+	var data = {
+		list: list
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// add Message Reply
+addMessageReply = (MessageObject) =>
+{
+	var url = API_END_POINT+'Messages/reply';
+	var data = {
+		MessageObject:MessageObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// list Message Replies
+listMessageReplies = (msgId) =>
+{
+	var url = API_END_POINT+'Messages/replies';
+	var data = {
+		msgId:msgId
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// list Message sent
+listMessagesSent = (MessageObject) =>
+{
+	var url = API_END_POINT+'Messages/sent';
+	var data = {
+		MessageObject:MessageObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// list Message Inbox
+listMessagesInbox = (MessageObject) =>
+{
+	var url = API_END_POINT+'Messages/inbox';
+	var data = {
+		MessageObject:MessageObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// send Message
+sendMessage = (MessageObject) =>
+{
+	var url = API_END_POINT+'Messages/send';
+	var data = {
+		MessageObject:MessageObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Patients
+searchPatients = (SearchObject) =>
+{
+	var url = API_END_POINT+'Patients/search';
+	var data = {
+		SearchObject:SearchObject
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// list Clinic Treatment Classes
+listClinicTreatmentClasses = (clinicId) =>
+{
+	var url = API_END_POINT+'Clinics/treatmentClasses';
+	var data = {
+		clinicId:clinicId
+	}
+
+	return sendAPIPostRequest(url, data);
+}
+// search Clinics
+searchClinics = (query) =>
+{
+	var url = API_END_POINT+'Clinics/search';
+	var data = {
+		query:query
+	}
+
+	return sendAPIPostRequest(url, data);
+}
 // update Patient
 updatePatient = (PatientObject) =>
 {
@@ -93,6 +396,33 @@ updatePatient = (PatientObject) =>
 	}
 
 	return sendAPIPostRequest(url, data);
+}
+// Page Loader
+PageLoader = (visible = true) =>
+{
+	var PAGE_LOADER = $('#PAGE_LOADER');
+
+	if ( visible )
+		PAGE_LOADER.fadeIn(200);
+	else
+		PAGE_LOADER.fadeOut(200);
+}
+// Section Loader
+SectionLoader = (parent,loader = 'loader-01') =>
+{
+	var loaderHTML = `<div class="loader-container" id="BlockLoaderqsdqsdqsd">
+							<span class="${loader}"></span>
+					</div>`;
+	var loaderElement = parent.find('#BlockLoaderqsdqsdqsd');
+
+	if ( loaderElement.length == 0 )
+	{
+		parent.addClass('position-relative');
+		parent.append(loaderHTML);	
+	}
+	loaderElement = parent.find('#BlockLoaderqsdqsdqsd');
+	if ( loader == '' )
+		loaderElement.remove();
 }
 // recursive Copy Dir Files Sync
 recursiveCopyDirFilesSync = (source, dest) =>
@@ -155,6 +485,7 @@ downloadFile = (url, filename, progressInfo, onComplete) =>
 		type: 'GET',
 		url: url,
 		async: true,
+		cache: false,
 		data: {},
 		beforeSend: function(e)
 		{
@@ -206,6 +537,16 @@ listenForBarcodeScanner = (CALLBACK) =>
 	    }, 500);
 	});
 }
+// list Patients
+listPatients = (clinicId) =>
+{
+	var url = API_END_POINT+'Patients/listAll';
+	var data = {
+		clinicId: clinicId
+	}
+
+	return sendAPIPostRequest(url, data);
+}
 // get Patient
 getPatient = (patientId) =>
 {
@@ -231,6 +572,25 @@ generateQRCode = (data) =>
 			resolve(url);
 		});	
 	});
+}
+// get Manager
+getManager = (ManagerObject) =>
+{
+	var url = API_END_POINT+'Manager/info';
+	var data = {
+		ManagerObject: ManagerObject
+	};
+	return sendAPIPostRequest(url, data);
+}
+// manager Login
+managerLogin = (data) =>
+{
+	var url = API_END_POINT+'Manager/login';
+	var data = {
+		username: data.username,
+		password: data.password
+	};
+	return sendAPIPostRequest(url, data);
 }
 // update Clinic
 updateClinic = (ClinicObject) =>
@@ -486,11 +846,22 @@ setUIDisplayLang = (lang) =>
 // Load display language
 loadDisplayLanguage = () =>
 {
+	/*
 	if ( fs.existsSync(DISPLAY_LANG_FILE) )
 	{
 		var data = fs.readFileSync(DISPLAY_LANG_FILE).toString('utf-8');
 		FUI_DISPLAY_LANG = JSON.parse(data);
 	}
+	*/
+	return new Promise(resolve =>
+	{
+		ipcIndexRenderer.removeAllListeners('translation-file-created');
+		ipcIndexRenderer.on('translation-file-created', (e,info) =>
+		{
+			FUI_DISPLAY_LANG = info;
+			resolve(info);
+		});	
+	});	
 }
 // load file
 loadFile = (filepath, CALLBACK) =>
@@ -880,6 +1251,8 @@ setupUserAuth = () =>
 
 	var PATIENT_LOGIN_FORM = signinWrapper.find('#PATIENT_LOGIN_FORM');
 
+	var FOUNDATION_MANAGER_LOGIN_FORM = signinWrapper.find('#FOUNDATION_MANAGER_LOGIN_FORM');
+
 	// go to signin
 	switchToSigninForm.off('click');
 	switchToSigninForm.on('click', e =>
@@ -891,6 +1264,14 @@ setupUserAuth = () =>
 	// go to signup
 	CLINIC_LOGIN_FORM.find('#switchToSignupForm').off('click');
 	CLINIC_LOGIN_FORM.find('#switchToSignupForm').on('click', e =>
+	{
+		e.preventDefault();
+		signupWrapper.slideDown(200);
+		signinWrapper.slideUp(200);
+	});
+	// go to signup
+	FOUNDATION_MANAGER_LOGIN_FORM.find('#switchToSignupForm').off('click');
+	FOUNDATION_MANAGER_LOGIN_FORM.find('#switchToSignupForm').on('click', e =>
 	{
 		e.preventDefault();
 		signupWrapper.slideDown(200);
@@ -1119,6 +1500,81 @@ setupUserAuth = () =>
 			});	
 		}
 	});
+	// FOUNDATION_MANAGER_LOGIN_FORM submit
+	FOUNDATION_MANAGER_LOGIN_FORM.off('submit');
+	FOUNDATION_MANAGER_LOGIN_FORM.on('submit', e =>
+	{
+		e.preventDefault();
+		target = FOUNDATION_MANAGER_LOGIN_FORM;
+		var loginType = loginFormTypeSelect.find(':selected').val();
+		var login = {
+			username: target.find('#sfUsername').val(),
+			password: $.trim(target.find('#sfPassword').val())
+		};
+		// translate
+		if ( FUI_DISPLAY_LANG.lang == 'ar' )
+		{
+			// display loader
+			TopLoader("تسجيل الدخول ، برجاء الانتظار ...");
+			managerLogin( login )
+			.then(response =>
+			{
+				// hide loader
+				TopLoader('', false);
+				if ( response.code == 404 )
+				{
+					DialogBox('خطأ', response.message);
+					return;
+				}
+
+				var data = response.data;
+				data['LOGIN_TYPE'] = loginType;
+				saveUserConfig(data, () => 
+				{
+					// display main container
+					MAIN_CONTENT_CONTAINER.show(0);
+					// display side navbar
+					SIDE_NAV_CONTAINER.show(0);
+					// display top nav bar
+					TOP_NAV_BAR.show(0);
+					// hide auth
+					userAuthContainer.removeClass('active');
+					window.location.href = 'ManagerPanel/index.ejs';
+				});
+			});	
+		}
+		else if ( FUI_DISPLAY_LANG.lang == 'fr' )
+		{
+			// display loader
+			TopLoader("Connectez-vous, veuillez patienter...");
+			managerLogin( login )
+			.then(response =>
+			{
+				// hide loader
+				TopLoader('', false);
+				if ( response.code == 404 )
+				{
+					DialogBox('Erreur', response.message);
+					return;
+				}
+
+				var data = response.data;
+				data['LOGIN_TYPE'] = loginType;
+				saveUserConfig(data, () => 
+				{
+					// display main container
+					MAIN_CONTENT_CONTAINER.show(0);
+					// display side navbar
+					SIDE_NAV_CONTAINER.show(0);
+					// display top nav bar
+					TOP_NAV_BAR.show(0);
+					// hide auth
+					userAuthContainer.removeClass('active');
+					window.location.href = 'ManagerPanel/index.ejs';
+				});
+			});	
+		}
+	});
 	// display all states
 	getAllStates().then(response =>
 	{
@@ -1144,10 +1600,28 @@ getAllStates = () =>
 	var data = {};
 	return sendAPIPostRequest(url, data);
 }
+// display loader
+PageLoader();
 // Call globally
-loadDisplayLanguage();
-loadLoginSession();
+await loadDisplayLanguage();
+//loadLoginSession();
 reloadUserConfig();
+// add dynamic scripts
+var index_js = '<script type="text/javascript" src="assets/js/index.js"></script>';
+var dialogs_js = '<script type="text/javascript" src="assets/js/include/Dialogs.js"></script>';
+var functions_js = '<script type="text/javascript" src="assets/js/include/Functions.js">';
+var classes_js = '<script type="text/javascript" src="assets/js/include/Classes.js"></script>';
+var pagination_js = '<script type="text/javascript" id="PAGINATION" src="assets/js/pagination_ar.js"></script>';
+var bootstrap_js = '<script type="text/javascript" src="assets/js/bootstrap.min.js"></script>';
+var popper_js = '<script type="text/javascript" src="assets/js/popper.min.js"></script>';
+
+$(index_js).insertAfter(GLOBALS_SCRIPT);
+$(dialogs_js).insertAfter(GLOBALS_SCRIPT);
+$(functions_js).insertAfter(GLOBALS_SCRIPT);
+$(classes_js).insertAfter(GLOBALS_SCRIPT);
+$(pagination_js).insertAfter(GLOBALS_SCRIPT);
+$(bootstrap_js).insertAfter(GLOBALS_SCRIPT);
+$(popper_js).insertAfter(GLOBALS_SCRIPT);
 
 });
 
